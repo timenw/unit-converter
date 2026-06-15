@@ -1,0 +1,67 @@
+name: Build Android
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Generate launcher icons
+        run: |
+          python3 -c "
+          import struct, zlib, os
+
+          def create_png(size, path):
+              sig = b'\x89PNG\r\n\x1a\n'
+              ihdr_data = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)
+              ihdr_crc = zlib.crc32(b'IHDR' + ihdr_data) & 0xffffffff
+              ihdr = struct.pack('>I', 13) + b'IHDR' + ihdr_data + struct.pack('>I', ihdr_crc)
+              raw = b''
+              for y in range(size):
+                  raw += b'\x00'
+                  for x in range(size):
+                      raw += b'\x19\x76\xd2'
+              compressed = zlib.compress(raw)
+              idat_crc = zlib.crc32(b'IDAT' + compressed) & 0xffffffff
+              idat = struct.pack('>I', len(compressed)) + b'IDAT' + compressed + struct.pack('>I', idat_crc)
+              iend_crc = zlib.crc32(b'IEND') & 0xffffffff
+              iend = struct.pack('>I', 0) + b'IEND' + struct.pack('>I', iend_crc)
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              with open(path, 'wb') as f:
+                  f.write(sig + ihdr + idat + iend)
+
+          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+          for density, size in sizes.items():
+              base = f'app/src/main/res/mipmap-{density}'
+              create_png(size, f'{base}/ic_launcher.png')
+              create_png(size, f'{base}/ic_launcher_round.png')
+              print(f'{density}: {size}x{size}')
+          print('Icons generated')
+          "
+
+      - name: Grant gradlew permission
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload Debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

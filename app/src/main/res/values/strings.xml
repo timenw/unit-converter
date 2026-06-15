@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Unit Converter</string>
+    <string name="currency">Currency</string>
+    <string name="length">Length</string>
+    <string name="weight">Weight</string>
+    <string name="area">Area</string>
+    <string name="volume">Volume</string>
+    <string name="temperature">Temperature</string>
+    <string name="calculator">Calculator</string>
+    <string name="remove_ads">Remove Ads - $0.99</string>
+    <string name="restore_purchase">Restore Purchase</string>
+    <string name="premium_active">Premium Active - No Ads</string>
+    <string name="ad_loading">Loading…</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
+    <string name="enter_amount">Enter amount</string>
+    <string name="result">Result</string>
+    <string name="tap_to_convert">Tap to convert</string>
+</resources>
