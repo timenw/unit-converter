@@ -88,6 +88,8 @@ fun UnitConverterApp(billingManager: BillingManager) {
         CategoryItem("Calculator", Icons.Default.Calculate, "calculator")
     )
 
+    val activity = LocalContext.current as? MainActivity
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -102,7 +104,7 @@ fun UnitConverterApp(billingManager: BillingManager) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            (LocalContext.current as? MainActivity)?.let {
+                            activity?.let {
                                 billingManager.launchPurchaseFlow(it)
                             }
                         }
@@ -145,8 +147,7 @@ fun UnitConverterApp(billingManager: BillingManager) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(8.dp)
             ) {
                 item {
                     Row(
