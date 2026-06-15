@@ -69,7 +69,13 @@ data class CategoryItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UnitConverterApp(billingManager: BillingManager) {
-    val isPremium by billingManager.isPremium.collectAsState()
+    var isPremium by remember { mutableStateOf(billingManager.isPremium) }
+    
+    // Listen for premium changes
+    billingManager.setPremiumCallback { premium ->
+        isPremium = premium
+    }
+    
     var selectedCategory by remember { mutableStateOf("currency") }
 
     val categories = listOf(

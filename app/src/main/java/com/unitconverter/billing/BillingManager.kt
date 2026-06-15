@@ -7,14 +7,21 @@ import com.android.billingclient.api.*
 
 class BillingManager(private val application: Application) : PurchasesUpdatedListener {
 
-    private val _isPremium = kotlinx.coroutines.flow.MutableStateFlow(false)
-    val isPremium: kotlinx.coroutines.flow.StateFlow<Boolean> = _isPremium
+    @Volatile
+    private var _isPremium = false
+
+    val isPremium: Boolean get() = _isPremium
 
     private var billingClient: BillingClient? = null
+    private var premiumCallback: ((Boolean) -> Unit)? = null
 
     companion object {
         private const val TAG = "BillingManager"
         const val SKU_REMOVE_ADS = "remove_ads"
+    }
+
+    fun setPremiumCallback(callback: (Boolean) -> Unit) {
+        premiumCallback = callback
     }
 
     fun startConnection() {
@@ -43,7 +50,8 @@ class BillingManager(private val application: Application) : PurchasesUpdatedLis
         ) { result, purchases ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 val hasPremium = purchases.any { it.products.contains(SKU_REMOVE_ADS) }
-                _isPremium.value = hasPremium
+                _isPremium = hasPremium
+                premiumCallback?.invoke(hasPremium)
                 Log.d(TAG, "Premium: $hasPremium")
             }
         }
@@ -87,12 +95,14 @@ class BillingManager(private val application: Application) : PurchasesUpdatedLis
                             .build()
                         billingClient?.acknowledgePurchase(ackParams) { ackResult ->
                             if (ackResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                                _isPremium.value = true
+                                _isPremium = true
+                                premiumCallback?.invoke(true)
                                 Log.d(TAG, "Purchase acknowledged")
                             }
                         }
                     } else {
-                        _isPremium.value = true
+                        _isPremium = true
+                        premiumCallback?.invoke(true)
                     }
                 }
             }
