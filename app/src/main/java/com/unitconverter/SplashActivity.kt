@@ -1,6 +1,7 @@
 package com.unitconverter
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -16,6 +17,8 @@ class SplashActivity : Activity() {
     companion object {
         private const val TAG = "SplashAd"
         private const val ADMOB_SLOT_ID = "ca-app-pub-1212786513185567/1371799713"
+        private const val PREFS_NAME = "unit_converter_prefs"
+        private const val KEY_PREMIUM = "is_premium"
     }
 
     private var hasNavigated = false
@@ -29,6 +32,16 @@ class SplashActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate")
+
+        // Check if user is premium - skip ad if so
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val isPremium = prefs.getBoolean(KEY_PREMIUM, false)
+        if (isPremium) {
+            Log.d(TAG, "User is premium, skipping ad")
+            goToMain()
+            return
+        }
+
         handler.postDelayed(timeoutRunnable, 8000)
 
         MobileAds.initialize(this) { status ->

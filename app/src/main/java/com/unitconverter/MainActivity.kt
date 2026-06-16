@@ -32,6 +32,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import com.unitconverter.billing.BillingManager
 import com.unitconverter.data.CurrencyData
 import com.unitconverter.data.UnitCategory
@@ -70,12 +74,12 @@ data class CategoryItem(
 @Composable
 fun UnitConverterApp(billingManager: BillingManager) {
     var isPremium by remember { mutableStateOf(billingManager.isPremium) }
-    
+
     // Listen for premium changes
     billingManager.setPremiumCallback { premium ->
         isPremium = premium
     }
-    
+
     var selectedCategory by remember { mutableStateOf("currency") }
 
     val categories = listOf(
@@ -98,41 +102,59 @@ fun UnitConverterApp(billingManager: BillingManager) {
             )
         },
         bottomBar = {
-            if (!isPremium) {
-                Surface(
-                    color = Orange500,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            activity?.let {
-                                billingManager.launchPurchaseFlow(it)
+            Column {
+                // Banner ad for non-premium users
+                if (!isPremium) {
+                    AndroidView(
+                        factory = { context ->
+                            AdView(context).apply {
+                                setAdSize(AdSize.BANNER)
+                                adUnitId = "ca-app-pub-1212786513185567/1371799713"
+                                loadAd(AdRequest.Builder().build())
                             }
-                        }
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        "🚫 Remove Ads - $0.99",
-                        color = White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
                     )
                 }
-            } else {
-                Surface(
-                    color = Color(0xFF4CAF50),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        "✅ Premium Active - No Ads",
-                        color = White,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                // Purchase / premium status bar
+                if (!isPremium) {
+                    Surface(
+                        color = Orange500,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                activity?.let {
+                                    billingManager.launchPurchaseFlow(it)
+                                }
+                            }
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            "🚫 Remove Ads - $0.99",
+                            color = White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
+                    Surface(
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            "✅ Premium Active - No Ads",
+                            color = White,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

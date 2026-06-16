@@ -2,6 +2,7 @@ package com.unitconverter.billing
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import com.android.billingclient.api.*
 
@@ -18,6 +19,22 @@ class BillingManager(private val application: Application) : PurchasesUpdatedLis
     companion object {
         private const val TAG = "BillingManager"
         const val SKU_REMOVE_ADS = "remove_ads"
+        private const val PREFS_NAME = "unit_converter_prefs"
+        private const val KEY_PREMIUM = "is_premium"
+    }
+
+    init {
+        // Restore premium state from SharedPreferences
+        val prefs = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        _isPremium = prefs.getBoolean(KEY_PREMIUM, false)
+        if (_isPremium) {
+            Log.d(TAG, "Restored premium state from prefs")
+        }
+    }
+
+    private fun savePremiumState(premium: Boolean) {
+        val prefs = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_PREMIUM, premium).apply()
     }
 
     fun setPremiumCallback(callback: (Boolean) -> Unit) {
@@ -51,6 +68,7 @@ class BillingManager(private val application: Application) : PurchasesUpdatedLis
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 val hasPremium = purchases.any { it.products.contains(SKU_REMOVE_ADS) }
                 _isPremium = hasPremium
+                savePremiumState(hasPremium)
                 premiumCallback?.invoke(hasPremium)
                 Log.d(TAG, "Premium: $hasPremium")
             }
@@ -96,12 +114,14 @@ class BillingManager(private val application: Application) : PurchasesUpdatedLis
                         billingClient?.acknowledgePurchase(ackParams) { ackResult ->
                             if (ackResult.responseCode == BillingClient.BillingResponseCode.OK) {
                                 _isPremium = true
+                                savePremiumState(true)
                                 premiumCallback?.invoke(true)
                                 Log.d(TAG, "Purchase acknowledged")
                             }
                         }
                     } else {
                         _isPremium = true
+                        savePremiumState(true)
                         premiumCallback?.invoke(true)
                     }
                 }
